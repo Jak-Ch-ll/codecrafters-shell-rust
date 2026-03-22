@@ -11,10 +11,7 @@ fn main() {
 
         match command.trim() {
             "exit" => break,
-            command if command.starts_with("echo") => {
-                let message = &command[5..];
-                println!("{}", message);
-            }
+            command if command.starts_with("echo") => println!("{}", &command[5..]),
             command => println!("{}: command not found", command),
         }
     }

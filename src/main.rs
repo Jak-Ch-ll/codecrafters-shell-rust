@@ -9,6 +9,6 @@ fn main() {
         let mut command = String::new();
         stdin().read_line(&mut command).unwrap();
 
-        println!("{}: command not found\n", command.trim());
+        println!("{}: command not found", command.trim());
     }
 }

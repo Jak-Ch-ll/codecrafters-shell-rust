@@ -23,6 +23,8 @@ fn main() {
 enum Program<'a> {
     Empty,
     Exit,
+
+    Cd(&'a str),
     Echo(&'a str),
     Pwd,
     Type(&'a str),
@@ -36,6 +38,8 @@ impl<'a> From<&'a str> for Program<'a> {
         match command {
             "" => Self::Empty,
             "exit" => Self::Exit,
+
+            "cd" => Self::Cd(arguments.trim()),
             "echo" => Self::Echo(arguments.trim()),
             "pwd" => Self::Pwd,
             "type" => Self::Type(arguments.trim()),
@@ -49,10 +53,21 @@ impl Program<'_> {
         match self {
             Program::Empty => (),
             Program::Exit => process::exit(0),
+
+            Program::Cd(path) => run_cd_command(path),
             Program::Echo(arguments) => println!("{}", arguments),
             Program::Pwd => run_pwd_command(),
             Program::Type(command) => run_type_command(command),
             Program::External(command, arguments) => run_external_command(command, arguments),
+        }
+    }
+}
+
+fn run_cd_command(path: &str) {
+    if let Err(error) = env::set_current_dir(path) {
+        match error.kind() {
+            io::ErrorKind::NotFound => println!("cd: {}: No such file or directory", path),
+            _ => println!("cd: {}", error.to_string()),
         }
     }
 }

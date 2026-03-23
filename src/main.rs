@@ -20,11 +20,20 @@ fn main() {
             Command::Exit => break,
             Command::Echo(arguments) => println!("{}", arguments),
             Command::Type(command) => run_type_command(command),
-            Command::Unknown(command, arguments) => {
-                let _ = process::Command::new(command)
+            Command::External(command, arguments) => {
+                let status = process::Command::new(command)
                     .args(arguments.split_whitespace())
-                    .status()
-                    .inspect_err(|_| println!("{}: command not found", command));
+                    .status();
+
+                if let Err(error) = status {
+                    match error.kind() {
+                        io::ErrorKind::NotFound => println!("{}: command not found", command),
+                        io::ErrorKind::PermissionDenied => {
+                            println!("{}: permission denied", command)
+                        }
+                        _ => println!("{}: unexpected error", command),
+                    }
+                }
             }
         }
     }
@@ -34,7 +43,7 @@ enum Command<'a> {
     Exit,
     Echo(&'a str),
     Type(&'a str),
-    Unknown(&'a str, &'a str),
+    External(&'a str, &'a str),
 }
 
 impl<'a> From<&'a str> for Command<'a> {
@@ -45,14 +54,14 @@ impl<'a> From<&'a str> for Command<'a> {
             "exit" => Self::Exit,
             "echo" => Self::Echo(arguments.trim()),
             "type" => Self::Type(arguments.trim()),
-            unknown => Self::Unknown(unknown.trim(), arguments.trim()),
+            unknown => Self::External(unknown.trim(), arguments.trim()),
         }
     }
 }
 
 fn run_type_command(arguments: &str) {
     match arguments.into() {
-        Command::Unknown(command, _) => {
+        Command::External(command, _) => {
             let path = env::var_os("PATH").unwrap();
             let file = env::split_paths(&path)
                 .flat_map(fs::read_dir)

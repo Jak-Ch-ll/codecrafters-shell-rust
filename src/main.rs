@@ -16,27 +16,7 @@ fn main() {
         let mut command = String::new();
         io::stdin().read_line(&mut command).unwrap();
 
-        match Program::from(command.as_str()) {
-            Program::Empty => continue,
-            Program::Exit => break,
-            Program::Echo(arguments) => println!("{}", arguments),
-            Program::Type(command) => run_type_command(command),
-            Program::External(command, arguments) => {
-                let status = process::Command::new(command)
-                    .args(arguments.split_whitespace())
-                    .status();
-
-                if let Err(error) = status {
-                    match error.kind() {
-                        io::ErrorKind::NotFound => println!("{}: command not found", command),
-                        io::ErrorKind::PermissionDenied => {
-                            println!("{}: permission denied", command)
-                        }
-                        _ => println!("{}: unexpected error", command),
-                    }
-                }
-            }
-        }
+        Program::from(command.as_str()).run();
     }
 }
 
@@ -58,6 +38,32 @@ impl<'a> From<&'a str> for Program<'a> {
             "echo" => Self::Echo(arguments.trim()),
             "type" => Self::Type(arguments.trim()),
             unknown => Self::External(unknown.trim(), arguments.trim()),
+        }
+    }
+}
+
+impl Program<'_> {
+    fn run(&self) {
+        match self {
+            Program::Empty => (),
+            Program::Exit => process::exit(0),
+            Program::Echo(arguments) => println!("{}", arguments),
+            Program::Type(command) => run_type_command(command),
+            Program::External(command, arguments) => {
+                let status = process::Command::new(command)
+                    .args(arguments.split_whitespace())
+                    .status();
+
+                if let Err(error) = status {
+                    match error.kind() {
+                        io::ErrorKind::NotFound => println!("{}: command not found", command),
+                        io::ErrorKind::PermissionDenied => {
+                            println!("{}: permission denied", command)
+                        }
+                        _ => println!("{}: unexpected error", command),
+                    }
+                }
+            }
         }
     }
 }

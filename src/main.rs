@@ -93,7 +93,7 @@ fn run_external_command(command: &str, arguments: &str) {
         match error.kind() {
             io::ErrorKind::NotFound => println!("{}: command not found", command),
             io::ErrorKind::PermissionDenied => println!("{}: permission denied", command),
-            _ => println!("{}: unexpected error", command),
+            _ => println!("{}: {}", command, error.to_string()),
         }
     }
 }

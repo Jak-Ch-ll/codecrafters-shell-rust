@@ -1,5 +1,6 @@
 use std::fs::DirEntry;
 use std::os::unix::fs::MetadataExt;
+use std::path::PathBuf;
 use std::{
     env,
     ffi::OsString,
@@ -64,9 +65,22 @@ impl Program<'_> {
 }
 
 fn run_cd_command(path: &str) {
-    if let Err(error) = env::set_current_dir(path) {
+    let mut path = PathBuf::from(path);
+
+    if let Ok(tail) = path.strip_prefix("~") {
+        if let Some(mut home) = env::home_dir() {
+            home.push(tail);
+            path = home;
+        } else {
+            println!("cd: {}: No home directory found", path.display())
+        }
+    }
+
+    if let Err(error) = env::set_current_dir(&path) {
         match error.kind() {
-            io::ErrorKind::NotFound => println!("cd: {}: No such file or directory", path),
+            io::ErrorKind::NotFound => {
+                println!("cd: {}: No such file or directory", path.display())
+            }
             _ => println!("cd: {}", error.to_string()),
         }
     }

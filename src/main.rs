@@ -16,11 +16,11 @@ fn main() {
         let mut command = String::new();
         io::stdin().read_line(&mut command).unwrap();
 
-        match Command::from(command.as_str()) {
-            Command::Exit => break,
-            Command::Echo(arguments) => println!("{}", arguments),
-            Command::Type(command) => run_type_command(command),
-            Command::External(command, arguments) => {
+        match Program::from(command.as_str()) {
+            Program::Exit => break,
+            Program::Echo(arguments) => println!("{}", arguments),
+            Program::Type(command) => run_type_command(command),
+            Program::External(command, arguments) => {
                 let status = process::Command::new(command)
                     .args(arguments.split_whitespace())
                     .status();
@@ -39,14 +39,14 @@ fn main() {
     }
 }
 
-enum Command<'a> {
+enum Program<'a> {
     Exit,
     Echo(&'a str),
     Type(&'a str),
     External(&'a str, &'a str),
 }
 
-impl<'a> From<&'a str> for Command<'a> {
+impl<'a> From<&'a str> for Program<'a> {
     fn from(value: &'a str) -> Self {
         let (command, arguments) = value.trim().split_once(' ').unwrap_or((value.trim(), ""));
 
@@ -61,7 +61,7 @@ impl<'a> From<&'a str> for Command<'a> {
 
 fn run_type_command(arguments: &str) {
     match arguments.into() {
-        Command::External(command, _) => {
+        Program::External(command, _) => {
             let path = env::var_os("PATH").unwrap();
             let file = env::split_paths(&path)
                 .flat_map(fs::read_dir)

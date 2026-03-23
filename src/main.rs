@@ -24,6 +24,7 @@ enum Program<'a> {
     Empty,
     Exit,
     Echo(&'a str),
+    Pwd,
     Type(&'a str),
     External(&'a str, &'a str),
 }
@@ -36,6 +37,7 @@ impl<'a> From<&'a str> for Program<'a> {
             "" => Self::Empty,
             "exit" => Self::Exit,
             "echo" => Self::Echo(arguments.trim()),
+            "pwd" => Self::Pwd,
             "type" => Self::Type(arguments.trim()),
             unknown => Self::External(unknown.trim(), arguments.trim()),
         }
@@ -48,9 +50,19 @@ impl Program<'_> {
             Program::Empty => (),
             Program::Exit => process::exit(0),
             Program::Echo(arguments) => println!("{}", arguments),
+            Program::Pwd => run_pwd_command(),
             Program::Type(command) => run_type_command(command),
             Program::External(command, arguments) => run_external_command(command, arguments),
         }
+    }
+}
+
+fn run_pwd_command() {
+    let dir = env::current_dir();
+
+    match dir {
+        Ok(dir) => println!("{}", dir.display()),
+        Err(err) => println!("{}", err.to_string()),
     }
 }
 

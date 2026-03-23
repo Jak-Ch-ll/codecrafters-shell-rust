@@ -17,6 +17,7 @@ fn main() {
         io::stdin().read_line(&mut command).unwrap();
 
         match Program::from(command.as_str()) {
+            Program::Empty => continue,
             Program::Exit => break,
             Program::Echo(arguments) => println!("{}", arguments),
             Program::Type(command) => run_type_command(command),
@@ -40,6 +41,7 @@ fn main() {
 }
 
 enum Program<'a> {
+    Empty,
     Exit,
     Echo(&'a str),
     Type(&'a str),
@@ -51,6 +53,7 @@ impl<'a> From<&'a str> for Program<'a> {
         let (command, arguments) = value.trim().split_once(' ').unwrap_or((value.trim(), ""));
 
         match command {
+            "" => Self::Empty,
             "exit" => Self::Exit,
             "echo" => Self::Echo(arguments.trim()),
             "type" => Self::Type(arguments.trim()),

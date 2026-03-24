@@ -18,6 +18,7 @@
         buildInputs = with pkgs; [
           rustc
           cargo
+          bacon
 
           codecrafters-cli
         ];

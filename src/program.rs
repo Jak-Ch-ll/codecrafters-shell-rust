@@ -112,6 +112,7 @@ fn run_type_command(arguments: &Arguments) {
                     None => println!("{}: not found", command),
                 }
             }
+            Program::Empty => (),
             _ => println!("{} is a shell builtin", argument),
         }
     }

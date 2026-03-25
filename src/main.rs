@@ -73,17 +73,29 @@ impl<'a> Program<'a> {
 }
 
 fn run_cd_command(args: &Arguments) {
-    let mut path = PathBuf::from(args.as_slice().first().unwrap());
+    let Some(arg) = args.as_slice().first() else {
+        let Some(home) = env::home_dir() else {
+            return println!("cd: missing operand");
+        };
+
+        return set_current_dir(home);
+    };
+
+    let mut path = PathBuf::from(arg);
 
     if let Ok(tail) = path.strip_prefix("~") {
-        if let Some(mut home) = env::home_dir() {
-            home.push(tail);
-            path = home;
-        } else {
-            println!("cd: {}: No home directory found", path.display())
-        }
+        let Some(mut home) = env::home_dir() else {
+            return println!("cd: {}: No home directory found", path.display());
+        };
+
+        home.push(tail);
+        path = home;
     }
 
+    set_current_dir(path);
+}
+
+fn set_current_dir(path: PathBuf) {
     if let Err(error) = env::set_current_dir(&path) {
         match error.kind() {
             io::ErrorKind::NotFound => {

@@ -30,7 +30,7 @@ impl From<&str> for Arguments {
 
 impl std::fmt::Display for Arguments {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.join(" "))
+        write!(f, "{}", self.0.join(" ").replace(" \n ", "\n"))
     }
 }
 

@@ -11,7 +11,13 @@ fn main() {
         io::stdout().flush().unwrap();
 
         let mut command = String::new();
-        io::stdin().read_line(&mut command).unwrap();
+        loop {
+            io::stdin().read_line(&mut command).unwrap();
+            let quote_count = command.chars().filter(|char| *char == '\'').count();
+            if quote_count.is_multiple_of(2) {
+                break;
+            }
+        }
 
         Program::from(command.as_str()).run();
     }

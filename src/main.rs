@@ -116,22 +116,24 @@ fn run_pwd_command() {
 }
 
 fn run_type_command(arguments: &Arguments) {
-    match Program::new(arguments.as_slice().first().unwrap()) {
-        Program::External(command, _) => {
-            let path = env::var_os("PATH").unwrap();
-            let file = env::split_paths(&path)
-                .flat_map(fs::read_dir)
-                .flatten()
-                .flatten()
-                .filter(is_executable)
-                .find(|entry| entry.file_name() == OsString::from(&command));
+    for argument in arguments.as_slice() {
+        match Program::new(argument) {
+            Program::External(command, _) => {
+                let path = env::var_os("PATH").unwrap();
+                let file = env::split_paths(&path)
+                    .flat_map(fs::read_dir)
+                    .flatten()
+                    .flatten()
+                    .filter(is_executable)
+                    .find(|entry| entry.file_name() == OsString::from(&command));
 
-            match file {
-                Some(file) => println!("{} is {}", command, file.path().display()),
-                None => println!("{}: not found", command),
+                match file {
+                    Some(file) => println!("{} is {}", command, file.path().display()),
+                    None => println!("{}: not found", command),
+                }
             }
+            _ => println!("{} is a shell builtin", argument),
         }
-        _ => println!("{} is a shell builtin", arguments),
     }
 }
 

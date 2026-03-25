@@ -1,3 +1,7 @@
+mod arguments;
+
+use arguments::Arguments;
+
 use std::fs::DirEntry;
 use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
@@ -25,11 +29,11 @@ enum Program<'a> {
     Empty,
     Exit,
 
-    Cd(&'a str),
-    Echo(&'a str),
+    Cd(Arguments),
+    Echo(Arguments),
     Pwd,
-    Type(&'a str),
-    External(&'a str, &'a str),
+    Type(Arguments),
+    External(&'a str, Arguments),
 }
 
 impl<'a> From<&'a str> for Program<'a> {
@@ -40,16 +44,20 @@ impl<'a> From<&'a str> for Program<'a> {
             "" => Self::Empty,
             "exit" => Self::Exit,
 
-            "cd" => Self::Cd(arguments.trim()),
-            "echo" => Self::Echo(arguments.trim()),
+            "cd" => Self::Cd(arguments.into()),
+            "echo" => Self::Echo(arguments.into()),
             "pwd" => Self::Pwd,
-            "type" => Self::Type(arguments.trim()),
-            unknown => Self::External(unknown.trim(), arguments.trim()),
+            "type" => Self::Type(arguments.into()),
+            unknown => Self::External(unknown.trim(), arguments.into()),
         }
     }
 }
 
-impl Program<'_> {
+impl<'a> Program<'a> {
+    fn new(value: &'a str) -> Self {
+        Self::from(value)
+    }
+
     fn run(&self) {
         match self {
             Program::Empty => (),
@@ -64,8 +72,8 @@ impl Program<'_> {
     }
 }
 
-fn run_cd_command(path: &str) {
-    let mut path = PathBuf::from(path);
+fn run_cd_command(args: &Arguments) {
+    let mut path = PathBuf::from(args.as_slice().first().unwrap());
 
     if let Ok(tail) = path.strip_prefix("~") {
         if let Some(mut home) = env::home_dir() {
@@ -95,8 +103,8 @@ fn run_pwd_command() {
     }
 }
 
-fn run_type_command(arguments: &str) {
-    match arguments.into() {
+fn run_type_command(arguments: &Arguments) {
+    match Program::new(arguments.as_slice().first().unwrap()) {
         Program::External(command, _) => {
             let path = env::var_os("PATH").unwrap();
             let file = env::split_paths(&path)
@@ -125,9 +133,9 @@ fn is_executable(dir_entry: &DirEntry) -> bool {
     }
 }
 
-fn run_external_command(command: &str, arguments: &str) {
+fn run_external_command(command: &str, arguments: &Arguments) {
     let status = process::Command::new(command)
-        .args(arguments.split_whitespace())
+        .args(arguments.as_slice())
         .status();
 
     if let Err(error) = status {
